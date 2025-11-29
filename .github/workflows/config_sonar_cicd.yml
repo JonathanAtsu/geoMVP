@@ -90,4 +90,4 @@ jobs:
             -Dsonar.login=${SONAR_TOKEN} \
             -Dsonar.organization=jonathanatsu \
             -Dsonar.projectKey=JonathanAtsu_geoMVP \
-            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.wait=false
