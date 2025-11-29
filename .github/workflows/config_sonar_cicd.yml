@@ -94,7 +94,7 @@ jobs:
 
        with:
 
-         name: geo_app-jar
+         name: geoMVP-jar
 
          path: target/*.jar
 
