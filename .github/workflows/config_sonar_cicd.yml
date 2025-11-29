@@ -168,7 +168,9 @@ jobs:
 
          SONAR_HOST_URL: ${{ env.SONAR_URL }}
 
-       run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=geo_app -Dsonar.qualitygate.wait=true # Replace 'geo_app' with your actual project key
+       run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar 
+                -Dsonar.projectKey=geoMVP 
+                -Dsonar.qualitygate.wait=true # Replace 'geo_app' with your actual project key
 
     
 
