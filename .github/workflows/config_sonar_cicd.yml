@@ -22,7 +22,7 @@ env:
 
  ARTIFACTORY_URL: ${{ secrets.ARTIFACT_URL }}
 
- SONAR_HOST_URL: ${{ secrets.SONAR_URL }}
+ SONAR_URL: ${{ secrets.SONAR_URL }}
 
  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
