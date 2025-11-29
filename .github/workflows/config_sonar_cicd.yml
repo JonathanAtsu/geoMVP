@@ -22,7 +22,7 @@ env:
 
  ARTIFACTORY_URL: ${{ secrets.ARTIFACT_URL }}
 
- SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+ SONAR_HOST_URL: ${{ secrets.SONAR_URL }}
 
  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
@@ -166,7 +166,7 @@ jobs:
 
          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
 
-         SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
+         SONAR_HOST_URL: ${{ env.SONAR_URL }}
 
        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=geo_app -Dsonar.qualitygate.wait=true # Replace 'geo_app' with your actual project key
 
@@ -185,4 +185,4 @@ jobs:
      #       timeoutMinutes: 5
 
      #       sleepTime: 10  # Seconds between status checks
-     
+
