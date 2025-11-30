@@ -120,14 +120,14 @@ jobs:
         APP_VERSION=`grep -m2 '<version>' pom.xml | tail -1 | grep -oP '(?<=>).*(?=<)'`
         echo $APP_VERSION
         docker build -t geomvp:${{ github.sha }} .
-        docker tag geomvp:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/geomvp:${{ github.sha }}
-        docker tag geomvp:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/geomvp:$APP_VERSION
+        docker tag geomvp:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }} geomvp:${{ github.sha }}
+        docker tag geomvp:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }} geomvp:$APP_VERSION
 
     - name: Push Docker image to ECR
       run: |
         APP_VERSION=`grep -m2 '<version>' pom.xml | tail -1 | grep -oP '(?<=>).*(?=<)'`
         echo $APP_VERSION
-        docker push ${{ steps.login-ecr.outputs.registry }}/geomvp:${{ github.sha }}
-        docker push ${{ steps.login-ecr.outputs.registry }}/geomvp:$APP_VERSION
+        docker push ${{ steps.login-ecr.outputs.registry }} geomvp:${{ github.sha }}
+        docker push ${{ steps.login-ecr.outputs.registry }} geomvp:$APP_VERSION
 
  
