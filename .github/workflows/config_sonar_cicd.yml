@@ -107,7 +107,7 @@ jobs:
       id: aws-creds
       with:
         role-to-assume: ${{ secrets.ECR_ARN }}
-        aws-region: ${{ secrets.AWS_REGION }}
+        aws-region: ${{ secrets.AWS_REGION_G }}
 
     - name: Download artifact
       uses: actions/download-artifact@v4
@@ -129,5 +129,7 @@ jobs:
         echo $APP_VERSION
         docker push ${{ steps.login-ecr.outputs.registry }} geomvp:${{ github.sha }}
         docker push ${{ steps.login-ecr.outputs.registry }} geomvp:$APP_VERSION
+
+ ##############################################################################################
 
  
