@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 # GLOBAL ENV: Only GitHub secrets or constants
-env:
+secrets:
   ARTIFACTORY_URL: ${{ secrets.ARTIFACT_URL }}
   SONAR_URL: ${{ secrets.SONAR_URL }}      # https://sonarcloud.io
   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -80,10 +80,10 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
 
       - name: SonarCloud Scan
-        env:
+        secrets:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
-          SONAR_URL: ${{ env.SONAR_URL }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_URL: ${{ secrets.SONAR_URL }}
         run: |
           mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.host.url=${SONAR_URL} \
@@ -91,3 +91,43 @@ jobs:
             -Dsonar.organization=jonathanatsu \
             -Dsonar.projectKey=JonathanAtsu_geoMVP \
             -Dsonar.qualitygate.wait=false
+    
+    
+ build-docker-image:
+    runs-on: ubuntu-latest
+    needs: sonar
+   steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: OIDC-login
+      uses: aws-actions/configure-aws-credentials@v2
+      id: aws-creds
+      with:
+        role-to-assume: ${{ secrets.ECR_ARN }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: geoMVP-jar
+        path: ./artifact
+
+    - name: Duild and Tag image for ECR  
+      run: |
+        APP_VERSION=`grep -m2 '<version>' pom.xml | tail -1 | grep -oP '(?<=>).*(?=<)'`
+        echo $APP_VERSION
+        docker build -t geoMVP:${{ github.sha }} .
+        docker tag geoMVP:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/geoMVP:${{ github.sha }}
+        docker tag geoMVP:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/geoMVP:$APP_VERSION
+
+    - name: Push Docker image to ECR
+      run: |
+        APP_VERSION=`grep -m2 '<version>' pom.xml | tail -1 | grep -oP '(?<=>).*(?=<)'`
+        echo $APP_VERSION
+        docker push ${{ steps.login-ecr.outputs.registry }}/geoMVP:${{ github.sha }}
+        docker push ${{ steps.login-ecr.outputs.registry }}/geoMVP:$APP_VERSION
+
+ 
