@@ -7,6 +7,14 @@ permissions:
   id-token: write
   contents: read
 
+# GLOBAL ENV: Only GitHub secrets or constants
+env:
+  ARTIFACTORY_URL: ${{ secrets.ARTIFACT_URL }}
+  SONAR_URL: ${{ secrets.SONAR_URL }}      # https://sonarcloud.io
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  ECR_ROLE: ${{ secrets.ECR_ACESS_ROLE }}
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -79,53 +87,47 @@ jobs:
         run: |
           mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.host.url=${SONAR_URL} \
-      - name: SonarCloud Scan
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_URL: ${{ secrets.SONAR_URL }}
-        run: |
-          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Dsonar.host.url=${SONAR_URL} \
             -Dsonar.login=${SONAR_TOKEN} \
             -Dsonar.organization=jonathanatsu \
             -Dsonar.projectKey=JonathanAtsu_geoMVP \
             -Dsonar.qualitygate.wait=false
-          with:
-          fetch-depth: 0
+    
+    
+  build-docker-image:
+    runs-on: ubuntu-latest
+    needs: sonar
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-      - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v2
-        id: aws-creds
-        with:
-          role-to-assume: ${{ secrets.ECR_ARN }}
-          aws-region: ${{ secrets.AWS_REGION }}
+    - name: OIDC-login
+      uses: aws-actions/configure-aws-credentials@v2
+      id: aws-creds
+      with:
+        role-to-assume: ${{ secrets.ECR_ARN }}
+        aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: geoMVP-jar
+        path: ./artifact
 
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: geoMVP-jar
-          path: ./artifact
+    - name: Duild and Tag image for ECR  
+      run: |
+        APP_VERSION=`grep -m2 '<version>' pom.xml | tail -1 | grep -oP '(?<=>).*(?=<)'`
+        echo $APP_VERSION
+        docker build -t geoMVP:${{ github.sha }} .
+        docker tag geoMVP:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/geoMVP:${{ github.sha }}
+        docker tag geoMVP:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/geoMVP:$APP_VERSION
 
-      - name: Build and Tag image for ECR
-        run: |
-          APP_VERSION=$(grep -m2 '<version>' pom.xml | tail -1 | grep -oP '(?<=>).*(?=<)')
-          echo "App version: $APP_VERSION"
-          REPO=${{ steps.login-ecr.outputs.registry }}/geoMVP
+    - name: Push Docker image to ECR
+      run: |
+        APP_VERSION=`grep -m2 '<version>' pom.xml | tail -1 | grep -oP '(?<=>).*(?=<)'`
+        echo $APP_VERSION
+        docker push ${{ steps.login-ecr.outputs.registry }}/geoMVP:${{ github.sha }}
+        docker push ${{ steps.login-ecr.outputs.registry }}/geoMVP:$APP_VERSION
 
-          docker build -t geoMVP:${{ github.sha }} .
-          docker tag geoMVP:${{ github.sha }} $REPO:${{ github.sha }}
-          docker tag geoMVP:${{ github.sha }} $REPO:$APP_VERSION
-
-      - name: Push Docker image to ECR
-        run: |
-          APP_VERSION=$(grep -m2 '<version>' pom.xml | tail -1 | grep -oP '(?<=>).*(?=<)')
-          echo "App version: $APP_VERSION"
-          REPO=${{ steps.login-ecr.outputs.registry }}/geoMVP
-
-          docker push $REPO:${{ github.sha }}
-          docker push $REPO:$APP_VERSION
+ 
