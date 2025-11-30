@@ -46,7 +46,7 @@ jobs:
       - name: Upload JAR file
         uses: actions/upload-artifact@v4
         with:
-          name: geoMVP-jar
+          name: geomvp-jar
           path: target/*.jar
 
   sonar:
@@ -112,22 +112,22 @@ jobs:
     - name: Download artifact
       uses: actions/download-artifact@v4
       with:
-        name: geoMVP-jar
+        name: geomvp-jar
         path: ./artifact
 
     - name: Duild and Tag image for ECR  
       run: |
         APP_VERSION=`grep -m2 '<version>' pom.xml | tail -1 | grep -oP '(?<=>).*(?=<)'`
         echo $APP_VERSION
-        docker build -t geoMVP:${{ github.sha }} .
-        docker tag geoMVP:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/geoMVP:${{ github.sha }}
-        docker tag geoMVP:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/geoMVP:$APP_VERSION
+        docker build -t geomvp:${{ github.sha }} .
+        docker tag geomvp:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/geomvp:${{ github.sha }}
+        docker tag geomvp:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/geomvp:$APP_VERSION
 
     - name: Push Docker image to ECR
       run: |
         APP_VERSION=`grep -m2 '<version>' pom.xml | tail -1 | grep -oP '(?<=>).*(?=<)'`
         echo $APP_VERSION
-        docker push ${{ steps.login-ecr.outputs.registry }}/geoMVP:${{ github.sha }}
-        docker push ${{ steps.login-ecr.outputs.registry }}/geoMVP:$APP_VERSION
+        docker push ${{ steps.login-ecr.outputs.registry }}/geomvp:${{ github.sha }}
+        docker push ${{ steps.login-ecr.outputs.registry }}/geomvp:$APP_VERSION
 
  
