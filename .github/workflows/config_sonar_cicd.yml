@@ -7,12 +7,12 @@ permissions:
   id-token: write
   contents: read
 
-# GLOBAL ENV: Only GitHub secrets or constants
-secrets:
+# GLOBAL ENV: Only GitHub env or constants
+env:
   ARTIFACTORY_URL: ${{ secrets.ARTIFACT_URL }}
   SONAR_URL: ${{ secrets.SONAR_URL }}      # https://sonarcloud.io
   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-  ECR_ROLE: ${{ secrets.ECR_ACESS_ROLE }}  # IAM role ARN for OIDC
+  ECR_ROLE: ${{ secrets.ECR_ARN }}  # IAM role ARN for OIDC
   AWS_REGION: ${{ secrets.AWS_REGION }}
 
 jobs:
@@ -78,10 +78,10 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
 
       - name: SonarCloud Scan
-        secrets:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_URL: ${{ secrets.SONAR_URL }}
+        env:
+          GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+          SONAR_URL: ${{ env.SONAR_URL }}
         run: |
           mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.host.url=${SONAR_URL} \
@@ -104,8 +104,8 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         id: aws-creds
         with:
-          role-to-assume: ${{ secrets.ECR_ROLE }}   # use the global secrets that points to your secret
-          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: ${{ env.ECR_ROLE }}   # use the global env that points to your secret
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: login-ecr
